@@ -82,12 +82,45 @@ saveUserInfo = async () =>{
 }
 
 createItem = async () => {
-    if(createItemFile.files.length == 0){
+    if(createItemFileField.files.length == 0){
         alert("Please select a file!");
         return;
     }else if(createItemNameField.value.length == 0){
         alert("Please give the item a name!")
     }
+
+    const nftFile = new Moralis.File("nftFile.jpg",createItemFileField.files[0]);
+    await nftFile.saveIPFS();
+
+    const nftFilePath = nftFile.ipfs();
+    const nftFileHash = nftFile.hash();
+
+    const metadata = {
+        name: createItemNameField.value,
+        description: createItemDescriptionField.value,
+        nftFilePath : nftFilePath,
+        nftFileHash : nftFileHash
+    };
+
+    const nftFileMetadateFile = new Moralis.File("metadata.json", {base64 : btoa(JSON.stringify(metadata))});
+    await nftFileMetadateFile.saveIPFS();
+
+    const nftFileMetadateFilePath = nftFileMetadateFile.ipfs();
+    const nftFileMetadateFileHash = nftFileMetadateFile.hash();
+
+    // Simple syntax to create a new subclass of Moralis.Object.
+    const Item = Moralis.Object.extend("Item");
+
+    // Create a new instance of that class.
+    const item = new Item();
+    item.set('name',createItemNameField.value);
+    item.set('description',createItemDescriptionField.value);
+    item.set('nftFilePath',nftFilePath);
+    item.set('nftFileHash',nftFileHash);
+    item.set('metadateFilePath',nftFileMetadateFilePath);
+    item.set('metadateFileHash',nftFileMetadateFileHash);
+    await item.save();
+    console.log(item);
 }
 
 
@@ -127,6 +160,7 @@ const createItemPriceField = document.getElementById("numCreateItemPrice");
 const createItemStatusField = document.getElementById("selectCreateItemStatus");
 const createItemFileField = document.getElementById("fileCreateItemFile");
 document.getElementById("btnCloseCreateItem").onclick = () => hideElement(createItemForm);
+document.getElementById("btnCreateItem").onclick = createItem;
 
 
 
